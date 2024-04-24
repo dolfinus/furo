@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, cast
 
 import sphinx.application
+import sphinx.config
 from docutils import nodes
 from pygments.formatters import HtmlFormatter
 from pygments.style import Style
@@ -283,7 +284,15 @@ def _builder_inited(app: sphinx.application.Sphinx) -> None:
     update_known_styles_state(app)
 
     def _update_default(key: str, *, new_default: Any) -> None:
-        app.config.values[key] = (new_default, *app.config.values[key][1:])
+        ConfigClass = getattr(sphinx.config, "_Opt", None)
+
+        if ConfigClass:
+            # Sphinx 7.3+ compatibility
+            value = ConfigClass(new_default, *app.config.values[key][1:])
+        else:
+            value = (new_default, *app.config.values[key][1:])
+
+        app.config.values[key] = value
 
     # Change the default permalinks icon
     _update_default("html_permalinks_icon", new_default="#")
